@@ -7,7 +7,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-Readings: Introduction to the dataRetriaval package <https://cran.r-project.org/web/packages/dataRetrieval/vignettes/dataRetrieval.html>
+Readings: Introduction to the dataRetrieval package <https://cran.r-project.org/web/packages/dataRetrieval/vignettes/dataRetrieval.html>
 
 Chapter 12 & 13 of R for Data Science <https://r4ds.had.co.nz/tidy-data.html>
 
@@ -25,8 +25,8 @@ Chapter 12 & 13 of R for Data Science <https://r4ds.had.co.nz/tidy-data.html>
 
 ## Install the dataRetrieval package. Load it and the tidyverse.
 
-```{r, echo=FALSE}
-install.packages("dataRetrieval")
+```{r, message = FALSE}
+#install.packages("dataRetrieval")
 library(dataRetrieval)
 library(tidyverse)
 library(lubridate)
