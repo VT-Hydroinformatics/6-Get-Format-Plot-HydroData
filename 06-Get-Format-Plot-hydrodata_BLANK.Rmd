@@ -1,11 +1,6 @@
----
-title: "6-Get-Format-Plot-Hydrodata"
-output: html_document
----
+# Joins, Pivots, and USGS dataRetrieval {#getdata}
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+Use Template Repository from github: 
 
 Readings: Introduction to the dataRetrieval package <https://cran.r-project.org/web/packages/dataRetrieval/vignettes/dataRetrieval.html>
 
@@ -13,17 +8,13 @@ Chapter 12 & 13 of R for Data Science <https://r4ds.had.co.nz/tidy-data.html>
 
 ## Goals for today
 
-### 1. Get familiar with the dataRetrieval package
+* Get familiar with the dataRetrieval package
+* Intro to joins
+* Learn about long vs. wide data and how to change between them
 
-### 2. Learn about long vs. wide data and how to change between them
+Prep question: How would you get data from the USGS (non-R)?
 
-### 3. Brief intro to joins
-
-### Prep question: How would you get data from the USGS (non-R)?
-
-------------------------------------------------------------------------
-
-## Install the dataRetrieval package. Load it and the tidyverse.
+Install the dataRetrieval package. Load it and the tidyverse.
 
 ```{r, message = FALSE}
 #install.packages("dataRetrieval")
@@ -47,9 +38,17 @@ First, let's get information about the site using the readNWISsite() and whatNWI
 Remember, all the parameter codes and site names get passed to dataRetrieval functions as characters, ao they must be in quotes.
 
 ```{r}
+#important: note the site number gets input as a character
 
+
+#Information about the site
+
+
+#What data is available for the site?
+#Daily values, mean values
 
 ```
+## Joins
 
 When we look at what whatNWISdata returns, we see it gives us parameter codes, but doesn't tell us what they mean. This is a common attribute of databases: you use a common identifier but then have the full information in a lookup file. In this case, the look-up information telling us what the parameter codes mean is in "parameterCdFile" which loads with the dataRetrieval package.
 
@@ -61,39 +60,45 @@ Joins allow us to combine the data from two different data sets that have a colu
 
 But you have to make some decisions: what if a key value exists in one set but not the other? Do you just drop that observation? Do you add an NA? Let's look at the different options.
 
-The following images from from the R for Data Science book linked above (<https://r4ds.had.co.nz/relational-data.html>)
+Take for example the two data sets, FlowTable and SizeTable. The SiteName values are the key values and the MeanFlow and WSsize values are the data.
 
-Take for example the two data sets, x and y. The colored numbers are the key values and the x and y values are the data.
+![Join Setup](images/joinsetup.png "Join setup"){width="400"} 
 
-![](https://d33wubrfki0l68.cloudfront.net/108c0749d084c03103f8e1e8276c20e06357b124/5f113/diagrams/join-setup.png)
+Note River1 and River2 match up, but River3 and River5 only exist in one data set or the other.
 
-Note the 1 & 2 keys match up, but 3 and 4 only exist in one data set or the other.![](https://d33wubrfki0l68.cloudfront.net/820b012580731f2134f90ee9c6388994c2343683/27703/diagrams/join-setup2.png){width="233"}
+The first way to deal with this is an **INNER JOIN: inner_join()** In an inner join, you only keep records that match. So the rows for River3 and River5 will be dropped because there is no corresponding data in the other set. See below:
 
-The first way to deal with this is an inner join: inner_join() In an inner join, you only keep records that match. So the rows for 3 and 4 will be dropped because there is no corresponding data in the other set. See below:
-
-![](https://d33wubrfki0l68.cloudfront.net/3abea0b730526c3f053a3838953c35a0ccbe8980/7f29b/diagrams/join-inner.png){width="458"}
+![Inner Join](images/innerjoin.png "Inner Join")
 
 But what if you don't want to lose the values in one or the other or both?!
 
 For instance, let's say you have a bunch of discharge data for a stream, and then chemistry grab samples. You want to join the chemistry to the discharge based on the dates and times they were taken. But when you do this, you don't want to delete all the discharge data where there is no chemistry! We need another option. Enter OUTER JOINS
 
-![](https://d33wubrfki0l68.cloudfront.net/9c12ca9e12ed26a7c5d2aa08e36d2ac4fb593f1e/79980/diagrams/join-outer.png){width="309"}
+**LEFT JOIN, left_join():** Preserves all values from the LEFT data set, and pastes on the matching ones from the right. This creates NAs where there is a value on the left but not the right. (this is what you'd want to do in the discharge - chemistry example above)
 
-The image above shows the three outer joins:
+![Left Join](images/leftjoin1.png "Left Join")
 
-LEFT JOIN, left_join(): Preserves all values from the LEFT data set, and pastes on the matching ones from the right. This creates NAs where there is a value on the left but not the right. (this is what you'd want to do in the discharge - chemistry example above)
+**RIGHT JOIN, right_join():** Preserves all values from the RIGHT data set, and pastes on the matching ones from the left. This creates NAs where there is a value on the right but not the left.
 
-RIGHT JOIN, right_join(): Preserves all values from the RIGHT data set, and pastes on the matching ones from the left. This creates NAs where there is a values on the right but not the left.
+![Right Join](images/rightjoin.png "Right Join")
 
-FULL JOIN, full_join(): KEEP EVERYTHING! The hoarder of the joins. No matching record on the left? create an NA on the right! No matching value on the right? Create an NA on the left! NAs for everyone!
+**FULL JOIN, full_join():** KEEP EVERYTHING! The hoarder of the joins. No matching record on the left? create an NA on the right! No matching value on the right? Create an NA on the left! NAs for everyone!
 
-When you do this in R, you use the functions identified in the descriptions with the following syntax:
+![Full Join](images/fulljoin.png "Full Join")
 
-#### if the column is named the same in both data sets xxx_join(left_tibble, right_tibble, by = "key_column")
+When you do this in R, you use the functions identified in the descriptions with the following syntax (see example below):
 
-#### if the column is named differently in both data sets xxx_join(left_tibble, right_tibble, by = c("left_key" = "right_key")
+**if the column is named the same in both data sets**
+> xxx_join(left_tibble, right_tibble, by = "key_column")**
+
+**if the column is named differently in both data sets**
+> xxx_join(left_tibble, right_tibble, by = c("left_key" = "right_key")
+
+![Left Join Differing Col Names](images/leftjoin2.png "Left Join with differing column names")
 
 Note in both of the above, when you specify which column to use as "by" you have to put it in quotes.
+
+## Join example
 
 So in the chunk below let's get add information about the parameters in dataAvailable by joining it with the key file: parameterCdFile. The column with the parameter codes is called parm_cd in dataAvailable and parameter_cd in parameterCdFile
 
@@ -101,13 +106,24 @@ So in the chunk below let's get add information about the parameters in dataAvai
 
 ```
 
-## So how do you find the site ids for downloading data?
+## Finding IDs to download USGS data
 
 You can find sites via map and just enter the id like we did in the chunks above: <https://maps.waterdata.usgs.gov/mapper/index.html>
 
 Below we will look at two other ways to get sites: using a bounding box of a geographic region, or search terms like State and drainage area
 
 ```{r}
+#find sites in a bounding box
+#coords of bottom left, top right
+
+
+#get sites in this bounding box that have daily water temperature and discharge
+
+
+
+
+#find sites with other criteria, VA, less than 20 sqmi, other criteria can be used..
+#check out the CRAN documentation
 
 
 ```
@@ -127,8 +143,6 @@ parameterCd get the parameters you want to download. We want water temperature a
 Once we have the data, the column names correspond to the keys that identify them, for example, discharge will be 00060 something something. Fortunately the dataRetrieval package also provides "renameNWISColumns()" which translates these into words, making them more easily understood by humans. We can pipe the results of our download to that function after we get the data to make the column names easier to understand.
 
 ```{r}
-
-
 
 ```
 
@@ -160,27 +174,29 @@ Or...now hear me out... you could PIVOT them.
 
 A two-dimensional object can be either long or wide. Each has it's advantages.
 
-### LONG
+**LONG**
 
 Each observation has it's own row. In the first image below, the table on the left is long because each measure of "cases" has it's own row. It's year and country are identified by a second column, and the values in that column repeat a lot. (Look at country and year in the table on the left)
 
-### WIDE
+**WIDE**
 
 Observations of different things have their own columns. In the second image below, notice in the right hand table there is a "cases" and "population" column rather than an identifier in a separate column like in the table on the left.
 
-### Why?
+**Why?**
 
 Long and wide data are more efficient for different things. Think about plotting a data set with 10 stream gages. If they are in a long format, you can just add color = Gage to your ggplot aes(). If they are in a wide format, meaning each gage has it's own column, you'd have to write a new geom for EACH gage, because they're all in separate columns.
 
-Not imagine you want to do some math to create new data: let's say cases divided by population in the second image below.... How would you even do that using the data on the left? With the wide data on the right it is simply mutate(casesPERpop = cases / population).
+Now imagine you want to do some math to create new data: let's say cases divided by population in the second image below.... How would you even do that using the data on the left? With the wide data on the right it is simply mutate(casesPERpop = cases / population).
 
 Finally, which table is easier to read in TABLE format (not a plot) in each of the two images below? Wide data is much more fitting for tables.
 
-![Pivoting \`table4\` into a longer, tidy form.](https://d33wubrfki0l68.cloudfront.net/3aea19108d39606bbe49981acda07696c0c7fcd8/2de65/images/tidy-9.png){width="556"}
+![Pivoting to a longer format](images/pivot_longer.png "Pivoting to a longer format")
 
-![Pivoting \`table2\` into a "wider", tidy form.](https://d33wubrfki0l68.cloudfront.net/8350f0dda414629b9d6c354f87acf5c5f722be43/bcb84/images/tidy-8.png){width="518"}
+![Pivoting to a wider format](images/pivot_wider.png "Pivoting to a wider format")
 
 dplyr, part of the tidyverse, has functions to convert data between wide and long data. I have to look up the syntax every single time I use them. But they are VERY useful.
+
+## Pivot Examples
 
 Back to our original question: I want to subtract the flow at Ivanhoe from the flow at Radford on the new river to see how much flow increases between the two sites through time.
 
@@ -199,6 +215,14 @@ To further illustrate how to move between long and wide data and when to use the
 In the chunk below we will look to see what sites have data for nitrate and chloride in our swva bounding box from above. We will them filter them to just stream sites (leave out groundwater and springs). And finally we will download the nitrate and chloride data for those sites.
 
 ```{r}
+#Nitrate as nitrate and chloride
+
+
+#what sites in our bounding box have cloride and nitrate
+
+
+#filter to just stream water
+
 ```
 
 Now, let's clean things up a bit.
@@ -208,7 +232,6 @@ Join the parameter names from parameterCdFile and then join the site names from 
 To illustrate the functionality of the data in this format, plot Chloride for each site, and then plot Chloride AND Nitrate, using the parameter name in facet_wrap.
 
 ```{r}
-
 
 ```
 
