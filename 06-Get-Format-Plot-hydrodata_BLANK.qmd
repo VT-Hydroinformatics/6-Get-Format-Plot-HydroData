@@ -1,3 +1,10 @@
+---
+title: "Joins, Pivots, and USGS dataRetrieval"
+format:
+  html: 
+    self-contained: true
+---
+
 # Joins, Pivots, and USGS dataRetrieval {#getdata}
 
 Use Template Repository from github: 
@@ -39,17 +46,13 @@ Remember, all the parameter codes and site names get passed to dataRetrieval fun
 
 ```{r}
 #important: note the site number gets input as a character
-site <- "03171000"
+
 
 #Information about the site
-siteinfo <- readNWISsite(site)
+
 
 #What data is available for the site?
 #Daily values, mean values
-dataAvailable <- whatNWISdata(siteNumber = site, service = "dv", statCd = "00003")
-
-dataAvailable
-
 
 ```
 ## Joins
@@ -107,21 +110,7 @@ Note in both of the above, when you specify which column to use as "by" you have
 So in the chunk below let's get add information about the parameters in dataAvailable by joining it with the key file: parameterCdFile. The column with the parameter codes is called parm_cd in dataAvailable and parameter_cd in parameterCdFile
 
 ```{r}
-dataAvailable <- left_join(dataAvailable, parameterCdFile, 
-                           by = c("parm_cd" = "parameter_cd"))
 
-dataAvailable
-
-#that made a lot of columns, let's clean it up
-dataAvailClean <- dataAvailable %>% select(site_no, 
-                                           station_nm,
-                                           parm_cd, 
-                                           srsname, 
-                                           parameter_units,
-                                           begin_date, 
-                                           end_date)
-
-dataAvailClean
 ```
 
 ## Finding IDs to download USGS data
@@ -133,22 +122,15 @@ Below we will look at two other ways to get sites: using a bounding box of a geo
 ```{r}
 #find sites in a bounding box
 #coords of bottom left, top right
-swva <- c(-81.36, 36.72, -80.27, 37.32)
+
 
 #get sites in this bounding box that have daily water temperature and discharge
-swva_sites <- whatNWISsites(bBox = swva, 
-                            parameterCd = c("00060", "00010"), 
-                            hasDataTypeCd = "dv")
 
-swva_sites
+
+
 
 #find sites with other criteria, VA, less than 20 sqmi, other criteria can be used..
 #check out the CRAN documentation
-smallVA <- readNWISdata(service = "dv",
-                           stateCd = "VA",
-                           parameterCd = "00060",
-                           drainAreaMax = "20",
-                           statCd = "00003")
 
 ```
 
@@ -167,15 +149,7 @@ parameterCd is the parameters you want to download. We want water temperature an
 Once we have the data, the column names correspond to the keys that identify them, for example, discharge will be 00060 something something. Fortunately the dataRetrieval package also provides "renameNWISColumns()" which translates these into words, making them more easily understood by humans. We can pipe the results of our download to that function after we get the data to make the column names easier to understand.
 
 ```{r}
-start <- "2006-10-01"
-end <- "2008-09-30"
-params <- c("00010", "00060")
 
-swva_dat <- readNWISdv(siteNumber = swva_sites$site_no, 
-                       parameterCd = params, 
-                       startDate = start, 
-                       endDate = end) %>% 
-            renameNWISColumns()
 ```
 
 Let's plot the water temperature data as a line and control the color of the lines with the different sites.
@@ -183,8 +157,7 @@ Let's plot the water temperature data as a line and control the color of the lin
 What could be better about this plot?
 
 ```{r}
-swva_dat %>% ggplot(aes(x = Date, y = Wtemp, color = site_no)) +
-  geom_line()
+
 ```
 
 We can add site names with....More joins! Our swva_sites data has the names of the sites in human-friendly language. The column in the downloaded data and in the swva_sites data is called "site_no" so we just give that to the "by" argument. Perform a left join to add the names of the sites to the data.
@@ -194,15 +167,7 @@ Then use select to remove some of the unnecessary columns.
 Then make the plot and then snazz it up with labels and a non-junky theme.
 
 ```{r}
-swva_dat_clean <- left_join(swva_dat, swva_sites, by = "site_no") %>%
-  select(station_nm, site_no, Date, Flow, Wtemp, dec_lat_va, dec_long_va)
 
-swva_dat_clean %>% ggplot(aes(x = Date, y = Wtemp, color = station_nm)) +
-  geom_line()+
-  ylab("Water temperature (deg C)")+
-  xlab(element_blank())+
-  labs(color = "Gage Site")+
-  theme_classic()
 ```
 
 ## Pivoting: wide and long data
@@ -250,17 +215,7 @@ Then, subtract the two and make a plot!
 ```{r}
 #Pivot so we can compute diffs between one river and others
 
-swva_wide <- swva_dat_clean %>% select(station_nm, Flow, Date) %>%
-  pivot_wider(names_from = station_nm, values_from = Flow)
 
-swva_wide <- swva_wide %>% 
-  mutate(Radford_Ivanhoe = 
-           `NEW RIVER AT RADFORD, VA` - `NEW RIVER AT IVANHOE, VA`)
-
-ggplot(swva_wide, aes(x = Date, y = Radford_Ivanhoe))+
-  geom_line()+
-  ggtitle("Change in flow from Ivanhoe to Radford")+
-  theme_classic()
 ```
 
 To further illustrate how to move between long and wide data and when to use them, let's grab some water quality data. This process will also review some of the other concepts from this topic.
@@ -271,19 +226,13 @@ Note that the readWQPqw() function requires the site number to have a leading "U
 
 ```{r}
 #Nitrate as nitrate and chloride
-params <- c("00940", "71851")
+
 
 #what sites in our bounding box have cloride and nitrate
-swva_chem_sites <- whatNWISsites(bBox = swva, 
-                            parameterCd = params)
+
 
 #filter to just stream water and
 #prep to send to readWQPqw by adding USGS- to site_no
-swva_chem_sites <- filter(swva_chem_sites, site_tp_cd == "ST") %>%
-                   mutate(site_no_USGS = paste0("USGS-", site_no))
-
-wqdat <- readWQPqw(siteNumber = swva_chem_sites$site_no_USGS, 
-                    parameterCd = params)
 
 ```
 
@@ -294,30 +243,7 @@ Join the parameter names from parameterCdFile and then join the site names from 
 To illustrate the functionality of the data in this format, plot Chloride for each site, and then plot Chloride AND Nitrate, using the parameter name in facet_wrap.
 
 ```{r}
-wqdat_clean <- wqdat %>% 
-  left_join(swva_chem_sites, 
-            by = c("MonitoringLocationIdentifier" = "site_no_USGS")) %>%
-  select(MonitoringLocationIdentifier, ActivityStartDate,
-         CharacteristicName, ResultMeasure.MeasureUnitCode, 
-         station_nm, ResultMeasureValue) %>%
-  filter(str_detect(station_nm, "NEW RIVER"))
-  
-wqdat_clean %>% filter(CharacteristicName == "Chloride") %>%
-  ggplot(aes(x = ActivityStartDate, y = ResultMeasureValue, color = station_nm)) +
-  geom_point()+
-  ylab("Chloride (mg/L)")+
-  xlab(element_blank())+
-  labs(color = "Site")+
-  theme_classic()
 
-wqdat_clean %>%
-  ggplot(aes(x = ActivityStartDate, y = ResultMeasureValue, color = station_nm)) +
-  geom_point()+
-  facet_wrap(facets = "CharacteristicName", nrow = 2)+
-  ylab("Concentration (mg/L)")+
-  xlab(element_blank())+
-  labs(color = "Site")+
-  theme_classic()
 
 ```
 
@@ -330,13 +256,4 @@ Finally, use pivot_longer to transform the data back into a long format. Often y
 ```{r}
 #make wqdat_clean wide
 
-wqdat_wide <- wqdat_clean %>% select(-ResultMeasure.MeasureUnitCode) %>%
-  pivot_wider(values_from = ResultMeasureValue, names_from = CharacteristicName)
-
-ggplot(wqdat_wide, aes(x = ActivityStartDate, y = Chloride + Nitrate)) +
-  geom_point()+
-  theme_classic()
-
-wqlonger <- wqdat_wide %>%
-  pivot_longer(cols = c("Chloride", "Nitrate"))
 ```
