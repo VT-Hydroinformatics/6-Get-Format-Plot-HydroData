@@ -7,7 +7,7 @@ format:
 
 # Joins, Pivots, and USGS dataRetrieval {#getdata}
 
-Use Template Repository from github: 
+Use Template Repository from github:
 
 Readings: Introduction to the dataRetrieval package <https://cran.r-project.org/web/packages/dataRetrieval/vignettes/dataRetrieval.html>
 
@@ -15,9 +15,9 @@ Chapter 12 & 13 of R for Data Science <https://r4ds.had.co.nz/tidy-data.html>
 
 ## Goals for today
 
-* Get familiar with the dataRetrieval package
-* Intro to joins
-* Learn about long vs. wide data and how to change between them
+-   Get familiar with the dataRetrieval package
+-   Intro to joins
+-   Learn about long vs. wide data and how to change between them
 
 Prep question: How would you get data from the USGS NWIS (non-R)?
 
@@ -59,6 +59,7 @@ dataAvailable
 
 
 ```
+
 ## Joins
 
 When we look at what whatNWISdata returns, we see it gives us parameter codes, but doesn't tell us what they mean. This is a common attribute of databases: you use a common identifier but then have the full information in a lookup file. In this case, the look-up information telling us what the parameter codes mean is in "parameterCdFile" which loads with the dataRetrieval package.
@@ -73,7 +74,7 @@ But you have to make some decisions: what if a key value exists in one set but n
 
 Take for example the two data sets, FlowTable and SizeTable. The SiteName values are the key values and the MeanFlow and WSsize values are the data.
 
-![Join Setup](images/joinsetup.png "Join setup"){width="400"} 
+![Join Setup](images/joinsetup.png "Join setup"){width="400"}
 
 Note River1 and River2 match up, but River3 and River5 only exist in one data set or the other.
 
@@ -99,11 +100,9 @@ For instance, let's say you have a bunch of discharge data for a stream, and the
 
 When you do this in R, you use the functions identified in the descriptions with the following syntax (see example below):
 
-**if the column is named the same in both data sets**
-> xxx_join(left_tibble, right_tibble, by = "key_column")**
+**if the column is named the same in both data sets** \> xxx_join(left_tibble, right_tibble, by = "key_column")\*\*
 
-**if the column is named differently in both data sets**
-> xxx_join(left_tibble, right_tibble, by = c("left_key" = "right_key")
+**if the column is named differently in both data sets** \> xxx_join(left_tibble, right_tibble, by = c("left_key" = "right_key")
 
 ![Left Join Differing Col Names](images/leftjoin2.png "Left Join with differing column names")
 
@@ -224,7 +223,7 @@ A two-dimensional object can be either long or wide. Each has it's advantages.
 
 **LONG**
 
-Each observation has it's own row. In the first image below, the table on the right is long because each measurement has it's own row. It's value and name are identified by a other columns, and the values in that column repeat a lot. 
+Each observation has it's own row. In the first image below, the table on the right is long because each measurement has it's own row. It's value and name are identified by a other columns, and the values in that column repeat a lot.
 
 **WIDE**
 
@@ -234,7 +233,7 @@ Observations of different things have their own columns. In the first image belo
 
 Long and wide data are more efficient for different things. Think about plotting a data set with 10 stream gages. If they are in a long format, you can just add color = Gage to your ggplot aes(). If they are in a wide format, meaning each gage has it's own column, you'd have to write a new geom for EACH gage, because they're all in separate columns.
 
-Now imagine you want to do some math to create new data: let's say cases NO3 multiplied by Flow.... How would you even do that using the data on the right? With the wide data on the left it is simply mutate(NO3 * Flow).
+Now imagine you want to do some math to create new data: let's say cases NO3 multiplied by Flow.... How would you even do that using the data on the right? With the wide data on the left it is simply mutate(NO3 \* Flow).
 
 Finally, which table is easier to read in TABLE format (not a plot) in each of the two images below? Wide data is much more fitting for tables.
 
