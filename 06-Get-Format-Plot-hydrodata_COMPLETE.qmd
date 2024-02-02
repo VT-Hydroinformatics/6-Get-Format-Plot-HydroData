@@ -7,7 +7,7 @@ format:
 
 # Joins, Pivots, and USGS dataRetrieval {#getdata}
 
-Use Template Repository from github:
+Use Template Repository from github:<https://github.com/VT-Hydroinformatics/6-Get-Format-Plot-HydroData>
 
 Readings: Introduction to the dataRetrieval package <https://cran.r-project.org/web/packages/dataRetrieval/vignettes/dataRetrieval.html>
 
