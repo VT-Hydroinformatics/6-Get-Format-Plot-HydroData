@@ -120,7 +120,7 @@ dataAvailable <- left_join(dataAvailable, parameterCdFile,
 dataAvailable
 
 #that made a lot of columns, let's clean it up
-dataAvailClean <- dataAvailable %>% select(site_no, 
+dataAvailClean <- dataAvailable |> select(site_no, 
                                            station_nm,
                                            parm_cd, 
                                            srsname, 
@@ -181,7 +181,7 @@ params <- c("00010", "00060")
 swva_dat <- readNWISdv(siteNumber = swva_sites$site_no, 
                        parameterCd = params, 
                        startDate = start, 
-                       endDate = end) %>% 
+                       endDate = end) |> 
             renameNWISColumns()
 ```
 
@@ -190,7 +190,7 @@ Let's plot the water temperature data as a line and control the color of the lin
 What could be better about this plot?
 
 ```{r}
-swva_dat %>% ggplot(aes(x = Date, y = Wtemp, color = site_no)) +
+swva_dat |> ggplot(aes(x = Date, y = Wtemp, color = site_no)) +
   geom_line()
 ```
 
@@ -201,10 +201,10 @@ Then use select to remove some of the unnecessary columns.
 Then make the plot and then snazz it up with labels and a non-junky theme.
 
 ```{r}
-swva_dat_clean <- left_join(swva_dat, swva_sites, by = "site_no") %>%
+swva_dat_clean <- left_join(swva_dat, swva_sites, by = "site_no") |>
   select(station_nm, site_no, Date, Flow, Wtemp, dec_lat_va, dec_long_va)
 
-swva_dat_clean %>% ggplot(aes(x = Date, y = Wtemp, color = station_nm)) +
+swva_dat_clean |> ggplot(aes(x = Date, y = Wtemp, color = station_nm)) +
   geom_line()+
   ylab("Water temperature (deg C)")+
   xlab(element_blank())+
@@ -257,10 +257,10 @@ Then, subtract the two and make a plot!
 ```{r}
 #Pivot so we can compute diffs between one river and others
 
-swva_wide <- swva_dat_clean %>% select(station_nm, Flow, Date) %>%
+swva_wide <- swva_dat_clean |> select(station_nm, Flow, Date) |>
   pivot_wider(names_from = station_nm, values_from = Flow)
 
-swva_wide <- swva_wide %>% 
+swva_wide <- swva_wide |> 
   mutate(Radford_Ivanhoe = 
            `NEW RIVER AT RADFORD, VA` - `NEW RIVER AT IVANHOE, VA`)
 
@@ -286,7 +286,7 @@ swva_chem_sites <- whatNWISsites(bBox = swva,
 
 #filter to just stream water and
 #prep to send to readWQPqw by adding USGS- to site_no
-swva_chem_sites <- filter(swva_chem_sites, site_tp_cd == "ST") %>%
+swva_chem_sites <- filter(swva_chem_sites, site_tp_cd == "ST") |>
                    mutate(site_no_USGS = paste0("USGS-", site_no))
 
 wqdat <- readWQPqw(siteNumber = swva_chem_sites$site_no_USGS, 
@@ -301,15 +301,15 @@ Join the parameter names from parameterCdFile and then join the site names from 
 To illustrate the functionality of the data in this format, plot Chloride for each site, and then plot Chloride AND Nitrate, using the parameter name in facet_wrap.
 
 ```{r}
-wqdat_clean <- wqdat %>% 
+wqdat_clean <- wqdat |> 
   left_join(swva_chem_sites, 
-            by = c("MonitoringLocationIdentifier" = "site_no_USGS")) %>%
+            by = c("MonitoringLocationIdentifier" = "site_no_USGS")) |>
   select(MonitoringLocationIdentifier, ActivityStartDate,
          CharacteristicName, ResultMeasure.MeasureUnitCode, 
-         station_nm, ResultMeasureValue) %>%
+         station_nm, ResultMeasureValue) |>
   filter(str_detect(station_nm, "NEW RIVER"))
   
-wqdat_clean %>% filter(CharacteristicName == "Chloride") %>%
+wqdat_clean |> filter(CharacteristicName == "Chloride") |>
   ggplot(aes(x = ActivityStartDate, y = ResultMeasureValue, color = station_nm)) +
   geom_point()+
   ylab("Chloride (mg/L)")+
@@ -317,7 +317,7 @@ wqdat_clean %>% filter(CharacteristicName == "Chloride") %>%
   labs(color = "Site")+
   theme_classic()
 
-wqdat_clean %>%
+wqdat_clean |>
   ggplot(aes(x = ActivityStartDate, y = ResultMeasureValue, color = station_nm)) +
   geom_point()+
   facet_wrap(facets = "CharacteristicName", nrow = 2)+
@@ -337,13 +337,13 @@ Finally, use pivot_longer to transform the data back into a long format. Often y
 ```{r}
 #make wqdat_clean wide
 
-wqdat_wide <- wqdat_clean %>% select(-ResultMeasure.MeasureUnitCode) %>%
+wqdat_wide <- wqdat_clean |> select(-ResultMeasure.MeasureUnitCode) |>
   pivot_wider(values_from = ResultMeasureValue, names_from = CharacteristicName)
 
 ggplot(wqdat_wide, aes(x = ActivityStartDate, y = Chloride + Nitrate)) +
   geom_point()+
   theme_classic()
 
-wqlonger <- wqdat_wide %>%
+wqlonger <- wqdat_wide |>
   pivot_longer(cols = c("Chloride", "Nitrate"))
 ```
