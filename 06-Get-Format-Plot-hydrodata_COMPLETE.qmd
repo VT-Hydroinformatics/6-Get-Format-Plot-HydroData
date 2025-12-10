@@ -15,6 +15,8 @@ format:
     self-contained: true
   ipynb:
       nb-frontmatter: true
+jupyter: 
+  kernel: ir
 execute: 
   enabled: true
 ---
@@ -69,7 +71,7 @@ siteinfo <- readNWISsite(site)
 #Daily values, mean values
 dataAvailable <- whatNWISdata(siteNumber = site, service = "dv", statCd = "00003")
 
-dataAvailable
+print(dataAvailable)
 
 
 ```
@@ -94,7 +96,6 @@ Take for example the two data sets, FlowTable and SizeTable. The SiteName values
 Join Setup
 :::
 
-<!-- ![Join Setup](images/joinsetup.png "Join setup"){width="400"} -->
 
 Note River1 and River2 match up, but River3 and River5 only exist in one data set or the other.
 
@@ -106,7 +107,6 @@ The first way to deal with this is an **INNER JOIN: inner_join()** In an inner j
 Basic ggplot syntax
 :::
 
-<!-- ![Inner Join](images/innerjoin.png "Inner Join") -->
 
 But what if you don't want to lose the values in one or the other or both?!
 
@@ -121,8 +121,6 @@ Left Join
 :::
 
 
-<!-- ![Left Join](images/leftjoin1.png "Left Join") -->
-
 **RIGHT JOIN, right_join():** Preserves all values from the RIGHT data set, and pastes on the matching ones from the left. This creates NAs where there is a value on the right but not the left.
 
 ::: {#fig-rightjoin .captioned-figure}
@@ -131,7 +129,6 @@ Left Join
 Right Join
 :::
 
-<!-- ![Right Join](images/rightjoin.png "Right Join") -->
 
 **FULL JOIN, full_join():** KEEP EVERYTHING! The hoarder of the joins. No matching record on the left? create an NA on the right! No matching value on the right? Create an NA on the left! NAs for everyone!
 
@@ -141,7 +138,6 @@ Right Join
 Full Join
 :::
 
-<!-- ![Full Join](images/fulljoin.png "Full Join") -->
 
 When you do this in R, you use the functions identified in the descriptions with the following syntax (see example below):
 
@@ -155,7 +151,6 @@ When you do this in R, you use the functions identified in the descriptions with
 Left Join with differing column names
 :::
 
-<!-- ![Left Join Differing Col Names](images/leftjoin2.png "Left Join with differing column names") -->
 
 Note in both of the above, when you specify which column to use as "by" you have to put it in quotes.
 
@@ -178,7 +173,7 @@ dataAvailClean <- dataAvailable |> select(site_no,
                                            begin_date, 
                                            end_date)
 
-dataAvailClean
+print(dataAvailClean)
 ```
 
 ## Finding IDs to download USGS data
@@ -197,7 +192,7 @@ swva_sites <- whatNWISsites(bBox = swva,
                             parameterCd = c("00060", "00010"), 
                             hasDataTypeCd = "dv")
 
-swva_sites
+print(swva_sites)
 
 #find sites with other criteria, VA, less than 20 sqmi, other criteria can be used..
 #check out the CRAN documentation
@@ -295,15 +290,12 @@ Pivoting to a longer format"
 :::
 
 
-<!-- ![Pivoting to a longer format](images/pivot_longer.png "Pivoting to a longer format") -->
-
 ::: {#fig-pivot_wider .captioned-figure}
 <img src="./images/pivot_wider.png" alt="Pivoting to a wider format" width="1000">
 
 Pivoting to a wider format
 :::
 
-<!-- ![Pivoting to a wider format](images/pivot_wider.png "Pivoting to a wider format") -->
 
 dplyr, part of the tidyverse, has functions to convert data between wide and long data. I have to look up the syntax every single time I use them. But they are VERY useful.
 
