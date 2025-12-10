@@ -71,7 +71,7 @@ siteinfo <- readNWISsite(site)
 #Daily values, mean values
 dataAvailable <- whatNWISdata(siteNumber = site, service = "dv", statCd = "00003")
 
-print(dataAvailable)
+dataAvailable
 
 
 ```
@@ -173,7 +173,7 @@ dataAvailClean <- dataAvailable |> select(site_no,
                                            begin_date, 
                                            end_date)
 
-print(dataAvailClean)
+dataAvailClean
 ```
 
 ## Finding IDs to download USGS data
@@ -192,7 +192,7 @@ swva_sites <- whatNWISsites(bBox = swva,
                             parameterCd = c("00060", "00010"), 
                             hasDataTypeCd = "dv")
 
-print(swva_sites)
+swva_sites
 
 #find sites with other criteria, VA, less than 20 sqmi, other criteria can be used..
 #check out the CRAN documentation
