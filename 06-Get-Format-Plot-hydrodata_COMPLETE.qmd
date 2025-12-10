@@ -162,7 +162,7 @@ So in the chunk below let's get add information about the parameters in dataAvai
 dataAvailable <- left_join(dataAvailable, parameterCdFile, 
                            by = c("parm_cd" = "parameter_cd"))
 
-dataAvailable
+print(dataAvailable)
 
 #that made a lot of columns, let's clean it up
 dataAvailClean <- dataAvailable |> select(site_no, 
@@ -173,7 +173,7 @@ dataAvailClean <- dataAvailable |> select(site_no,
                                            begin_date, 
                                            end_date)
 
-dataAvailClean
+print(dataAvailClean)
 ```
 
 ## Finding IDs to download USGS data
