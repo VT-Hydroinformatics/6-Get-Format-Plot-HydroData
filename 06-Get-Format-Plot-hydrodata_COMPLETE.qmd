@@ -1,8 +1,22 @@
 ---
-title: "Joins, Pivots, and USGS dataRetrieval"
+title: "Chapter 6: Joins, Pivots, and USGS dataRetrieval"
+date: today
+github: https://github.com/VT-Hydroinformatics/6-Get-Format-Plot-HydroData
+author:
+  - name: JP Gannon
+    orcid: 0000-0002-4595-3214
+    github: jpgannon
+    url: https://jpgannon.github.io/
+    affiliation: 
+      - name: Virginia Tech
+        url: https://www.vt.edu/
 format:
   html: 
     self-contained: true
+  ipynb:
+      nb-frontmatter: true
+execute: 
+  enabled: true
 ---
 
 # Joins, Pivots, and USGS dataRetrieval {#getdata}
