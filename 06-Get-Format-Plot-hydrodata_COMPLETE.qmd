@@ -117,7 +117,7 @@ When you do this in R, you use the functions identified in the descriptions with
 
 **if the column is named differently in both data sets** \> xxx_join(left_tibble, right_tibble, by = c("left_key" = "right_key")
 
-![Left Join Differing Col Names](images/leftjoin2.png "Left Join with differing column names")
+![](images/leftjoin2.png "Left Join with differing column names")
 
 Note in both of the above, when you specify which column to use as "by" you have to put it in quotes.
 
