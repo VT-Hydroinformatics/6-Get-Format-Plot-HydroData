@@ -1,11 +1,9 @@
 ---
 title: "Chapter 6: Joins, Pivots, and USGS dataRetrieval"
 date: today
-github: https://github.com/VT-Hydroinformatics/6-Get-Format-Plot-HydroData
 author:
   - name: JP Gannon
     orcid: 0000-0002-4595-3214
-    github: jpgannon
     url: https://jpgannon.github.io/
     affiliation: 
       - name: Virginia Tech
@@ -14,9 +12,10 @@ format:
   html: 
     self-contained: true
   ipynb:
-      nb-frontmatter: true
-jupyter: 
-  kernel: ir
+    nb-frontmatter: true
+    jupyter:
+      kernel: ir
+      ipynb-shell-interactivity: all
 execute: 
   enabled: true
 ---
@@ -71,9 +70,7 @@ siteinfo <- readNWISsite(site)
 #Daily values, mean values
 dataAvailable <- whatNWISdata(siteNumber = site, service = "dv", statCd = "00003")
 
-print(dataAvailable)
-
-
+dataAvailable
 ```
 
 ## Joins
@@ -90,23 +87,13 @@ But you have to make some decisions: what if a key value exists in one set but n
 
 Take for example the two data sets, FlowTable and SizeTable. The SiteName values are the key values and the MeanFlow and WSsize values are the data.
 
-::: {#fig-joinsetup .captioned-figure}
-<img src="./images/joinsetup.png" alt="Join Setup" width="400">
-
-Join Setup
-:::
-
+![Join Setup](images/joinsetup.png "Join setup"){width="400"}
 
 Note River1 and River2 match up, but River3 and River5 only exist in one data set or the other.
 
 The first way to deal with this is an **INNER JOIN: inner_join()** In an inner join, you only keep records that match. So the rows for River3 and River5 will be dropped because there is no corresponding data in the other set. See below:
 
-::: {#fig-innerjoin .captioned-figure}
-<img src="./images/innerjoin.png" alt="Inner Join" width="1000">
-
-Basic ggplot syntax
-:::
-
+![Inner Join](images/innerjoin.png "Inner Join")
 
 But what if you don't want to lose the values in one or the other or both?!
 
@@ -114,30 +101,15 @@ For instance, let's say you have a bunch of discharge data for a stream, and the
 
 **LEFT JOIN, left_join():** Preserves all values from the LEFT data set, and pastes on the matching ones from the right. This creates NAs where there is a value on the left but not the right. (this is what you'd want to do in the discharge - chemistry example above)
 
-::: {#fig-leftjoin1 .captioned-figure}
-<img src="./images/leftjoin1.png" alt="Left Join" width="1000">
-
-Left Join
-:::
-
+![Left Join](images/leftjoin1.png "Left Join")
 
 **RIGHT JOIN, right_join():** Preserves all values from the RIGHT data set, and pastes on the matching ones from the left. This creates NAs where there is a value on the right but not the left.
 
-::: {#fig-rightjoin .captioned-figure}
-<img src="./images/rightjoin.png" alt="Right Join" width="1000">
-
-Right Join
-:::
-
+![Right Join](images/rightjoin.png "Right Join")
 
 **FULL JOIN, full_join():** KEEP EVERYTHING! The hoarder of the joins. No matching record on the left? create an NA on the right! No matching value on the right? Create an NA on the left! NAs for everyone!
 
-::: {#fig-fulljoin .captioned-figure}
-<img src="./images/fulljoin.png" alt="Full Join" width="1000">
-
-Full Join
-:::
-
+![Full Join](images/fulljoin.png "Full Join")
 
 When you do this in R, you use the functions identified in the descriptions with the following syntax (see example below):
 
@@ -145,12 +117,7 @@ When you do this in R, you use the functions identified in the descriptions with
 
 **if the column is named differently in both data sets** \> xxx_join(left_tibble, right_tibble, by = c("left_key" = "right_key")
 
-::: {#fig-fulljoin .captioned-figure}
-<img src="./images/leftjoin2.png" alt="Left Join Differing Col Names" width="1000">
-
-Left Join with differing column names
-:::
-
+![Left Join Differing Col Names](images/leftjoin2.png "Left Join with differing column names")
 
 Note in both of the above, when you specify which column to use as "by" you have to put it in quotes.
 
@@ -162,7 +129,7 @@ So in the chunk below let's get add information about the parameters in dataAvai
 dataAvailable <- left_join(dataAvailable, parameterCdFile, 
                            by = c("parm_cd" = "parameter_cd"))
 
-print(dataAvailable)
+dataAvailable
 
 #that made a lot of columns, let's clean it up
 dataAvailClean <- dataAvailable |> select(site_no, 
@@ -173,7 +140,7 @@ dataAvailClean <- dataAvailable |> select(site_no,
                                            begin_date, 
                                            end_date)
 
-print(dataAvailClean)
+dataAvailClean
 ```
 
 ## Finding IDs to download USGS data
@@ -283,19 +250,9 @@ Now imagine you want to do some math to create new data: let's say cases NO3 mul
 
 Finally, which table is easier to read in TABLE format (not a plot) in each of the two images below? Wide data is much more fitting for tables.
 
-::: {#fig-pivot_longer .captioned-figure}
-<img src="./images/pivot_longer.png" alt="Pivoting to a longer format" width="1000">
+![Pivoting to a longer format](images/pivot_longer.png "Pivoting to a longer format")
 
-Pivoting to a longer format"
-:::
-
-
-::: {#fig-pivot_wider .captioned-figure}
-<img src="./images/pivot_wider.png" alt="Pivoting to a wider format" width="1000">
-
-Pivoting to a wider format
-:::
-
+![Pivoting to a wider format](images/pivot_wider.png "Pivoting to a wider format")
 
 dplyr, part of the tidyverse, has functions to convert data between wide and long data. I have to look up the syntax every single time I use them. But they are VERY useful.
 
