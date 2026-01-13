@@ -87,7 +87,7 @@ But you have to make some decisions: what if a key value exists in one set but n
 
 Take for example the two data sets, FlowTable and SizeTable. The SiteName values are the key values and the MeanFlow and WSsize values are the data.
 
-![Join setup](images/joinsetup.png){width="400"}\
+![Join setup](images/joinsetup.png "Join setup")\
 _Join setup_
 
 Note River1 and River2 match up, but River3 and River5 only exist in one data set or the other.
