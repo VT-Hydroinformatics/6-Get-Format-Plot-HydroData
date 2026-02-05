@@ -47,7 +47,7 @@ library(lubridate)
 
 ## Exploring what dataRetrieval can do.
 
-Think about the dataRetrieval as a way to interact with same public data you can access through waterdata.usgs.gov but without having to click on buttons and search around. It makes getting data or doing analyses with USGS data much more reproducible and fast!
+Think about the dataRetrieval as a way to interact with the same public data you can access through waterdata.usgs.gov but without having to click on buttons and search around. It makes getting data or doing analyses with USGS data much more reproducible and fast!
 
 To explore a few of the capabilities (NOT ALL!!) we will start with the USGS gage on the New River at Radford. The gage number is 03171000.
 
@@ -57,7 +57,7 @@ I always have to look up how to do things because the package is very specialize
 
 First, let's get information about the site using the read_waterdata_monitoring_location() and read_waterdata_ts_meta() functions. Try each out and see what they tell you.
 
-Remember, all the parameter codes and site names get passed to dataRetrieval functions as characters, so they must be in quotes and with "USGS-" at the front.
+Remember, all the parameter codes and site names get passed to dataRetrieval functions as characters, so they must be in quotes and site numbers must have "USGS-" at the front.
 
 ```{r}
 #important: note the site number gets input as a character with agency code prefix
@@ -83,9 +83,9 @@ dataAvailable
 
 ## Joins
 
-If you look at dataAvailable, you'll see it contains the USGS site number, but not the name of the site. This makes it challenging to interpret if you a human who prefers words to long sequences of numbers.
+If you look at dataAvailable, you'll see it contains the USGS site number, but not the name of the site. This makes it challenging to interpret if you are a human who prefers words to long sequences of numbers.
 
-Site name is in the siteinfo object, and it's easy enough to look there for one site. However, we often have many sites, so we need a better way to add this information to our data. 
+The site name is in the siteinfo object, and it's easy enough to look there for one site. However, we often have many sites, so we need a better way to add this information to our data. 
 
 Enter JOINS!
 
@@ -191,7 +191,7 @@ swva_sites <- swva_sites |> filter(str_detect(monitoring_location_id, "USGS-"))
 
 print(swva_sites)
 
-#you can get all the site in VA using read_waterdata_monitoring_location as follows
+#you can get all the sites in VA using read_waterdata_monitoring_location as follows
 all_VA_sites <- read_waterdata_monitoring_location(
     state_name = "Virginia", 
     site_type = "Stream",
@@ -214,7 +214,7 @@ time gets the start and end dates, together like this: time = c(start, end). IMP
 
 parameter_code is the parameters you want to download. We want water discharge and water temperature, which are "00060" and "00010", respectively.
 
-Once we the data are downloaded, the temperature and discharge data are stacked on top of each other in the same column (this is LONG data... see later in this chapter). There is a column that tells you what each number is measuring, but it just says the parameter code. To add human-readable information, we can join parameter information in from the parameterCdFile, an object that got added to your environment when you loaded the dataretrieval package. In Rstudio, if you click the "GlobalEnvironment" dropdown in the "Environment" tab, and then choose dataretrieval, you can see this object and a couple others. 
+Once the data are downloaded, the temperature and discharge data are stacked on top of each other in the same column (this is LONG data... see later in this chapter). There is a column that tells you what each number is measuring, but it just says the parameter code. To add human-readable information, we can join parameter information in from the parameterCdFile, an object that got added to your environment when you loaded the dataRetrieval package. In Rstudio, if you click the "GlobalEnvironment" dropdown in the "Environment" tab, and then choose dataRetrieval, you can see this object and a couple others. 
 
 ```{r}
 start <- "2006-10-01"
@@ -277,11 +277,11 @@ You could split them into two objects, then join based on date?
 
 Or...now hear me out... you could PIVOT them.
 
-A two-dimensional object can be either long or wide. Each has it's advantages.
+A two-dimensional object can be either long or wide. Each has its advantages.
 
 **LONG**
 
-Each observation has it's own row. In the first image below, the table on the right is long because each measurement has it's own row. It's value and name are identified by a other columns, and the values in that column repeat a lot.
+Each observation has its own row. In the first image below, the table on the right is long because each measurement has it's own row. It's value and name are identified by other columns, and the values in that column repeat a lot.
 
 **WIDE**
 
@@ -291,7 +291,7 @@ Observations of different things have their own columns. In the first image belo
 
 Long and wide data are more efficient for different things. Think about plotting a data set with 10 stream gages. If they are in a long format, you can just add color = Gage to your ggplot aes(). If they are in a wide format, meaning each gage has it's own column, you'd have to write a new geom for EACH gage, because they're all in separate columns.
 
-Now imagine you want to do some math to create new data: let's say cases NO3 multiplied by Flow.... How would you even do that using the data on the right? With the wide data on the left it is simply mutate(NO3 \* Flow).
+Now imagine you want to do some math to create new data: let's say NO3 multiplied by Flow.... How would you even do that using the data on the right? With the wide data on the left it is simply mutate(NO3 \* Flow).
 
 Finally, which table is easier to read in TABLE format (not a plot) in each of the two images below? Wide data is much more fitting for tables.
 
@@ -311,7 +311,7 @@ Back to our original question: I want to subtract the flow at Ivanhoe from the f
 
 To do this I am going to use pivot_wider() to give Ivanhoe and Radford discharges their own column.
 
-First, we will use select to trim the data to just what we need, then call pivot_wider telling it which data to use for the new column names (names_from = monitoring_location_name) and what values we want to pivot into the data under those columns (values_from = values). We will have to filter to just discharge first as well. We will do this before selecting the columns and pivoting.
+First, we will trim to just discharge data using a filter, then use select to trim the data to just the columns we need, then call pivot_wider telling it which data to use for the new column names (names_from = monitoring_location_name) and what values we want to pivot into the data under those columns (values_from = value). 
 
 Then, subtract the two and make a plot!
 
@@ -354,17 +354,17 @@ new_river_wq <- readWQPqw(siteNumbers = new_river_sites,
 
 ```
 
-Now, let's clean things up a bit. Hang on tight, we are going to do a bunch of data wrangling in one pipe sequence to accomplish what we want: A dataset that has a chloride and specific conductance in their own columns, with a column for time, and one that says what site the measurement was from.
+Now, let's clean things up a bit. Hang on tight, we are going to do a bunch of data wrangling in one pipe sequence to accomplish what we want: A dataset that has chloride and specific conductance in their own columns, with a column for time, and one that says what site the measurement was from.
 
 This will allow us to plot Chloride vs. specific conductance
 
 The workflow is as follows:
--Create a time column that combines the date and time columns in the downloaded data.
--Select the columns we need to pivot the data wider
--Pivot wider
--Rename the specific conductance column so it doesn't have a space in it
--Join in the names of the locations
--Select just the columns we want
+- Create a time column that combines the date and time columns in the downloaded data.
+- Select the columns we need to pivot the data wider
+- Pivot wider
+- Rename the specific conductance column so it doesn't have a space in it
+- Join in the names of the locations
+- Select just the columns we want
 
 Finally plot chloride on the x axis, specific conductance on the y, and color by site!
 ```{r}
@@ -395,7 +395,7 @@ nr_wq_wide |>
 
 Finally, let's look at how to pivot the same dataset longer. An example of why you might want to do this is if you want to make a stacked plot with Chloride on one and specific conductance on the other, both against time, using the ggplot facets, not making multiple plots.
 
-So! We will pivot longer, teling pivot_longer() to pivot the columnd Spec_Cond and Chloride.
+So! We will pivot longer, telling pivot_longer() to pivot the column Spec_Cond and Chloride.
 
 When we plot this, we will see that there is one datapoint from way before all the others, so we will filter that out so we can see the pattern in the rest of the data.
 
