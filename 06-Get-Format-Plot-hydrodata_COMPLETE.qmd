@@ -55,9 +55,9 @@ The documentation for the package is extremely helpful: <https://cran.r-project.
 
 I always have to look up how to do things because the package is very specialized! This is the case with most website APIs, in my experience. It's a good argument for getting good at navigating package documentation! Basically you just look through and try to piece together the recipe for what you want to do using the examples they give in the document.
 
-First, let's get information about the site using the readNWISsite() and whatNWISdata() functions. Try each out and see what they tell you.
+First, let's get information about the site using the read_waterdata_monitoring_location() and read_waterdata_ts_meta() functions. Try each out and see what they tell you.
 
-Remember, all the parameter codes and site names get passed to dataRetrieval functions as characters, so they must be in quotes.
+Remember, all the parameter codes and site names get passed to dataRetrieval functions as characters, so they must be in quotes and with "USGS-" at the front.
 
 ```{r}
 #important: note the site number gets input as a character with agency code prefix
@@ -83,11 +83,11 @@ dataAvailable
 
 ## Joins
 
-When we look at what whatNWISdata returns, we see it gives us parameter codes, but doesn't tell us what they mean. This is a common attribute of databases: you use a common identifier but then have the full information in a lookup file. In this case, the look-up information telling us what the parameter codes mean is in "parameterCdFile" which loads with the dataRetrieval package.
+If you look at dataAvailable, you'll see it contains the USGS site number, but not the name of the site. This makes it challenging to interpret if you a human who prefers words to long sequences of numbers.
 
-So, you could look at that and see what the parameters mean.
+Site name is in the siteinfo object, and it's easy enough to look there for one site. However, we often have many sites, so we need a better way to add this information to our data. 
 
-OR We could have R do it and add a column that tells us what the parameters mean. Enter JOINS!
+Enter JOINS!
 
 Joins allow us to combine the data from two different data sets that have a column in common. At its most basic, a join looks for a matching row with the same key in both datasets (for example, a USGS gage number) and then combines the rows. So now you have all the data from both sets, matched on the key.
 
@@ -143,7 +143,9 @@ Note in both of the above, when you specify which column to use as "by" you have
 
 ## Join example
 
-So in the chunk below let's get add information about the parameters in dataAvailable by joining it with the key file: parameterCdFile. The column with the parameter codes is called parm_cd in dataAvailable and parameter_cd in parameterCdFile
+So in the chunk below let's get add the site name by joining the dataAvailable and siteinfo tibbles. They both have the column "monitoring_location_id", so we can join on that.
+
+What if the same information is in two columns that have different names? Good question! You can do that using the syntax by = c("left_column" = "right_column"). Clumsy, but we will do an example later.
 
 ```{r}
 dataAvailable <- left_join(dataAvailable, siteinfo, 
@@ -152,13 +154,14 @@ dataAvailable <- left_join(dataAvailable, siteinfo,
 dataAvailable
 
 #that made a lot of columns, let's clean it up
-dataAvailClean <- dataAvailable |> select(monitoring_location_id, 
-                                           monitoring_location_name,
-                                           parameter_code, 
-                                           parameter_name, 
-                                           parameter_description,
-                                           begin, 
-                                           end)
+dataAvailClean <- dataAvailable |> 
+  select(monitoring_location_id, 
+         monitoring_location_name,
+         parameter_code, 
+         parameter_name, 
+         parameter_description,
+         begin, 
+         end)
 
 dataAvailClean
 ```
@@ -167,7 +170,7 @@ dataAvailClean
 
 You can find sites via map and just enter the id like we did in the chunks above: <https://maps.waterdata.usgs.gov/mapper/index.html>
 
-Below we will look at two other ways to get sites: using a bounding box of a geographic region, or search terms like State and drainage area
+Below we will look at two other ways to get sites: using a bounding box of a geographic region, or search terms like State.
 
 ```{r}
 #find sites in a bounding box
@@ -188,21 +191,30 @@ swva_sites <- swva_sites |> filter(str_detect(monitoring_location_id, "USGS-"))
 
 print(swva_sites)
 
+#you can get all the site in VA using read_waterdata_monitoring_location as follows
+all_VA_sites <- read_waterdata_monitoring_location(
+    state_name = "Virginia", 
+    site_type = "Stream",
+    properties = c("monitoring_location_id", "agency_code"))
+
+#a quick way to see how many sites are in Virginia is to plot their position!
+ggplot(data = all_VA_sites)+
+  geom_sf()
 ```
 
 ## OK let's download some data!
 
-We are going to use readNWISdv(), which downloads daily values.
+We are going to use read_waterdata_daily(), which downloads daily values.
 
 We will tell it which sites to download, which parameters to download, and then what time period to download.
 
-siteNumber gets the sites we want to download, USGS site numbers, as a character. We will use the swva_sites data we generated (yep, you can download multiple sites at once!)
+monitoring_location_id gets the sites we want to download, USGS site numbers, as a character. We will use the swva_sites data we generated (yep, you can download multiple sites at once!)
 
-startDate and endDate get the.... start and end dates. IMPORTANT: These must be in YYY-MM-DD format, but you don't have to tell R they are dates before you give them to the function, it'll do that for you.
+time gets the start and end dates, together like this: time = c(start, end). IMPORTANT: These must be in YYYY-MM-DD format, but you don't have to tell R they are dates before you give them to the function, it'll do that for you.
 
-parameterCd is the parameters you want to download. We want water temperature and discharge, which are "00060" and "00010", respectively.
+parameter_code is the parameters you want to download. We want water discharge and water temperature, which are "00060" and "00010", respectively.
 
-Once we have the data, the column names correspond to the keys that identify them, for example, discharge will be 00060 something something. Fortunately the dataRetrieval package also provides "renameNWISColumns()" which translates these into words, making them more easily understood by humans. We can pipe the results of our download to that function after we get the data to make the column names easier to understand.
+Once we the data are downloaded, the temperature and discharge data are stacked on top of each other in the same column (this is LONG data... see later in this chapter). There is a column that tells you what each number is measuring, but it just says the parameter code. To add human-readable information, we can join parameter information in from the parameterCdFile, an object that got added to your environment when you loaded the dataretrieval package. In Rstudio, if you click the "GlobalEnvironment" dropdown in the "Environment" tab, and then choose dataretrieval, you can see this object and a couple others. 
 
 ```{r}
 start <- "2006-10-01"
@@ -218,18 +230,17 @@ swva_dat <- read_waterdata_daily(
 
 ```
 
-Let's plot the water temperature data as a line and control the color of the lines with the different sites.
+Let's plot the water temperature data and discharge as lines and control the color of the lines with the different sites. Because the data is stacked together in one column, we can facet by the column that identifies the measurements (parameter_nm) to make a combined plot of the two.
 
 What could be better about this plot?
 
 ```{r}
 swva_dat |> ggplot(aes(x = time, y = value, color = monitoring_location_id)) +
   geom_line()+
-  facet_wrap(facets = ~parameter_nm, scales = "free_y", ncol = 1)+
-  theme_classic()
+  facet_wrap(facets = ~parameter_nm, scales = "free_y", ncol = 1)
 ```
 
-We can add site names with....More joins! Our swva_sites data has the names of the sites in human-friendly language. The column in the downloaded data and in the swva_sites data is called "site_no" so we just give that to the "by" argument. Perform a left join to add the names of the sites to the data.
+We can add site names with....More joins! Our swva_info data has the names of the sites in human-friendly language. The column in the downloaded data and in the swva_sites data is called "monitoring_location_id" so we just give that to the "by" argument. Perform a left join to add the names of the sites to the data.
 
 Then use select to remove some of the unnecessary columns.
 
@@ -241,7 +252,7 @@ swva_info <- read_waterdata_monitoring_location(
 
 swva_dat_clean <- 
   left_join(swva_dat, swva_info, 
-                            by = "monitoring_location_id") |>
+            by = "monitoring_location_id") |>
   select(monitoring_location_id, 
          monitoring_location_name, 
          time, 
@@ -254,7 +265,8 @@ swva_dat_clean |>
   ggplot(aes(x = time, y = value, color = monitoring_location_name)) +
   geom_line()+
   facet_wrap(facets = ~parameter_nm, scales = "free_y", ncol = 1)+
-  theme_classic()
+  theme_classic()+
+  labs(color = "Location")
 ```
 
 ## Pivoting: wide and long data
@@ -299,7 +311,7 @@ Back to our original question: I want to subtract the flow at Ivanhoe from the f
 
 To do this I am going to use pivot_wider() to give Ivanhoe and Radford discharges their own column.
 
-First, we will use select to trim the data to just what we need, then call pivot_wider telling it which data to use for the new column names (names_from = station_nm) and what values we want to pivot into the data under those columns (values_from = Flow).
+First, we will use select to trim the data to just what we need, then call pivot_wider telling it which data to use for the new column names (names_from = monitoring_location_name) and what values we want to pivot into the data under those columns (values_from = values). We will have to filter to just discharge first as well. We will do this before selecting the columns and pivoting.
 
 Then, subtract the two and make a plot!
 
@@ -323,9 +335,9 @@ ggplot(swva_wide, aes(x = time, y = Radford_Ivanhoe))+
 
 To further illustrate how to move between long and wide data and when to use them, let's grab some water quality data. This process will also review some of the other concepts from this topic.
 
-In the chunk below we will look to see what sites have data for nitrate and chloride in our swva bounding box from above. We will then filter them to just stream sites (leave out groundwater and springs). And finally we will download the nitrate and chloride data for those sites.
+In the chunk below we will find sites from our SWVA bounding box that are on the New River and then download any data they have for chloride and specific conductance. 
 
-Note that the readWQPqw() function requires the site number to have a leading "USGS-" so we will add that using the paste0() function in a new column using a mutate. You could also use paste() with sep = ''. We will also use the resulting column when we join site information with the downloaded data in the next step.
+We will use readWQPqw() to read the chemistry data.
 
 ```{r}
 #site numbers for New River sites, find site with NEW RIVER in name
@@ -334,7 +346,7 @@ new_river_dat <- swva_dat_clean |>
 
 new_river_sites <- unique(new_river_dat$monitoring_location_id)
 
-#Nitrate as nitrate and chloride
+#Chloride and specific conductance
 params <- c("00940", "00095")
 
 new_river_wq <- readWQPqw(siteNumbers = new_river_sites,
@@ -342,12 +354,19 @@ new_river_wq <- readWQPqw(siteNumbers = new_river_sites,
 
 ```
 
-Now, let's clean things up a bit.
+Now, let's clean things up a bit. Hang on tight, we are going to do a bunch of data wrangling in one pipe sequence to accomplish what we want: A dataset that has a chloride and specific conductance in their own columns, with a column for time, and one that says what site the measurement was from.
 
-Join the parameter names from parameterCdFile and then join the site names from swva_chem_site. Then select just the columns we want, and finally filter the remaining data to just look at sites from the New River.
+This will allow us to plot Chloride vs. specific conductance
 
-To illustrate the functionality of the data in this format, plot Chloride for each site, and then plot Chloride AND Nitrate, using the parameter name in facet_wrap.
+The workflow is as follows:
+-Create a time column that combines the date and time columns in the downloaded data.
+-Select the columns we need to pivot the data wider
+-Pivot wider
+-Rename the specific conductance column so it doesn't have a space in it
+-Join in the names of the locations
+-Select just the columns we want
 
+Finally plot chloride on the x axis, specific conductance on the y, and color by site!
 ```{r}
 nr_wq_wide <- new_river_wq |>
   mutate(time = ymd_hms(
@@ -374,11 +393,11 @@ nr_wq_wide |>
   theme_classic()
 ```
 
-Now let's say we want to calculate something with chloride and nitrate. We need to make the data wide so we have a nitrate column and a chloride column. Do that below. What goes into values_from? what goes into names_from?
+Finally, let's look at how to pivot the same dataset longer. An example of why you might want to do this is if you want to make a stacked plot with Chloride on one and specific conductance on the other, both against time, using the ggplot facets, not making multiple plots.
 
-Next, plot Chloride and Nitrate added together (Chloride + Nitrate). Could you do this with the data in the previous format?
+So! We will pivot longer, teling pivot_longer() to pivot the columnd Spec_Cond and Chloride.
 
-Finally, use pivot_longer to transform the data back into a long format. Often you'll get data in a wide format and need to convert it to long, and we haven't tried that yet. The only argument you'll need to pass to pivot_longer() in this case is to tell it what columns to turn into the new DATA column (using the cols = ) parameter.
+When we plot this, we will see that there is one datapoint from way before all the others, so we will filter that out so we can see the pattern in the rest of the data.
 
 ```{r}
 #make dataset long
